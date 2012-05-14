@@ -8,6 +8,8 @@ This module is like [stackedy](https://github.com/substack/node-stackedy),
 except that it uses [esprima](http://esprima.org/) by way of
 [falafel](https://github.com/substack/node-falafel).
 
+[![build status](https://secure.travis-ci.org/substack/node-fritter.png)](http://travis-ci.org/substack/node-fritter)
+
 examples
 ========
 
