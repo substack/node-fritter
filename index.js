@@ -24,10 +24,8 @@ module.exports = function (src, context) {
         if (typeof fn === 'function' && typeof fn.apply === 'function') {
             var fn_ = function () {
                 stack.push(nodes[ix]);
-console.log('PUSH ' + ix);
                 var res = fn.apply(undefined, arguments);
                 stack.pop();
-console.log('POP ' + ix);
                 return res;
             };
             return copyAttributes(fn, fn_);
@@ -44,14 +42,31 @@ console.log('POP ' + ix);
     
     names.catcher = identifier(6);
     names.catchVar = identifier(6);
-    context[names.catcher] = function (err) {
-console.log('CAUGHT');
-        self.emit('error', err);
-        throw err;
-    };
+    
+    (function () {
+        var caught = [];
+        var throwing = false;
+        
+        context[names.catcher] = function (err) {
+            if (caught.indexOf(err) < 0) {
+                caught.push(err);
+                self.emit('error', err, { stack : self.stack.slice() });
+            }
+            
+            if (!throwing) {
+                throwing = true;
+                process.nextTick(function () {
+                    caught = [];
+                    throwing = false;
+                });
+            }
+            throw err;
+        };
+    })();
     
     self.source = falafel(src, function (node) {
-        if (node.type === 'FunctionExpression') {
+        if (node.type === 'FunctionExpression'
+        || node.type === 'FunctionDeclaration') {
             var inner =  node.body.source().slice(1,-1); // inside the brackets
             node.body.update('{'
                 + 'try{' + inner + '}'
