@@ -50,7 +50,9 @@ module.exports = function (src, context) {
         context[names.catcher] = function (err) {
             if (caught.indexOf(err) < 0) {
                 caught.push(err);
-                self.emit('error', err, { stack : self.stack.slice() });
+                self.emit('error', err, {
+                    stack : self.stack.slice()
+                });
             }
             
             if (!throwing) {
