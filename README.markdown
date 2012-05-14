@@ -4,6 +4,10 @@ fritter
 Transform the AST in order to generate stack traces with no stack trace API
 necessary.
 
+This module is like [stackedy](https://github.com/substack/node-stackedy),
+except that it uses [esprima](http://esprima.org/) by way of
+[falafel](https://github.com/substack/node-falafel).
+
 examples
 ========
 
