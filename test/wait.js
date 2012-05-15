@@ -33,10 +33,7 @@ test('wait', function (t) {
         t.equal(context.exports.times, x0);
     }, 500);
     
-    try {
-        vm.runInNewContext(fry.source, fry.context);
-    }
-    catch (err) { console.log(err.stack) }
+    vm.runInNewContext(fry.source, fry.context);
     
     t.on('end', function () {
         clearInterval(iv);
