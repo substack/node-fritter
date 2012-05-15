@@ -25,22 +25,22 @@ test('calls', function (t) {
         
         t.deepEqual(
             c.stack.map(function (s) { return s.start.line }),
-            [ 1, 0, 4 ]
+            [ 2, 1, 5 ]
         );
         
         t.deepEqual(
             c.stack.map(function (s) { return s.end.line }),
-            [ 1, 0, 4 ]
+            [ 2, 1, 5 ]
         );
         
         t.deepEqual(
-            c.stack.map(function (s) { return s.start.col }),
+            c.stack.map(function (s) { return s.start.column }),
             [ 16, 16, 0 ]
         );
         
         t.deepEqual(
-            c.stack.map(function (s) { return s.end.col }),
-            [ 18, 18, 2 ]
+            c.stack.map(function (s) { return s.end.column }),
+            [ 19, 19, 3 ]
         );
     });
     
