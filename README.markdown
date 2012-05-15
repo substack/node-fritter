@@ -66,6 +66,13 @@ Include and wrap some javascript source `src`. Use `opts.filename` to associate
 nodes in the stack with filenames so custom error handlers know what file an
 exception originated form.
 
+fry.stop()
+----------
+
+Stop execution insofar as that is possible.
+
+If callbacks from external APIs fire, the body of those callbacks won't fire.
+
 attributes
 ==========
 
