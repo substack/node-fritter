@@ -21,6 +21,7 @@ function Fritter (context) {
         catchVar : identifier(6)
     };
     this.stack = [];
+    this.current = undefined;
     this.context = context;
     this.nodes = [];
     this.defineContext();
@@ -70,7 +71,8 @@ Fritter.prototype.defineContext = function () {
             if (caught.indexOf(err) < 0) {
                 caught.push(err);
                 self.emit('error', err, {
-                    stack : self.stack.slice()
+                    stack : self.stack.slice(),
+                    current : self.current
                 });
             }
             
@@ -87,6 +89,7 @@ Fritter.prototype.defineContext = function () {
 };
 
 Fritter.prototype.include = function (src, opts) {
+    var self = this;
     if (typeof src === 'object') {
         opts = src;
         src = opts.source;
@@ -95,7 +98,7 @@ Fritter.prototype.include = function (src, opts) {
     var nodes = this.nodes;
     var names = this.names;
     
-    var src_ = falafel(src, function (node) {
+    var src_ = falafel({ source : src, loc : true }, function (node) {
         if (node.type === 'FunctionExpression'
         || node.type === 'FunctionDeclaration') {
             var inner =  node.body.source().slice(1,-1); // inside the brackets
@@ -113,6 +116,8 @@ Fritter.prototype.include = function (src, opts) {
                 + '))'
             );
             if (opts.filename) node.filename = opts.filename;
+            node.start = node.loc.start;
+            node.end = node.loc.end;
             nodes.push(node);
         }
     });
