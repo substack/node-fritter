@@ -53,11 +53,18 @@ var fritter = require('fritter')
 var fry = fritter(src, context={})
 --------------------------------
 
-Return a `fry` object given some javascript source `src` and some `context` to
-execute in and populate.
+Return a `fry` object given some optional javascript source `src` and some
+`context` to execute in and populate.
 
 `fry` emits `'error'` events with the error object and the present callstack as
 arguments when exceptions in `src` are thrown.
+
+fry.include(src, opts={})
+-------------------------
+
+Include and wrap some javascript source `src`. Use `opts.filename` to associate
+nodes in the stack with filenames so custom error handlers know what file an
+exception originated form.
 
 attributes
 ==========
