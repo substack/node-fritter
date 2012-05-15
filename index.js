@@ -3,9 +3,36 @@ var identifier = require('identifier');
 var EventEmitter = require('events').EventEmitter;
 
 module.exports = function (src, context) {
+    if (typeof src === 'object') {
+        context = src;
+        src = undefined;
+    }
     if (!context) context = {};
-    var self = new EventEmitter;
-    self.context = context;
+    
+    var fry = new Fritter(context || {});
+    if (src !== undefined) fry.include(String(src));
+    return fry;
+};
+
+function Fritter (context) {
+    this.names = {
+        call : identifier(6),
+        catcher : identifier(6),
+        catchVar : identifier(6)
+    };
+    this.stack = [];
+    this.context = context;
+    this.nodes = [];
+    this.defineContext();
+    this.source = '';
+}
+
+Fritter.prototype = new EventEmitter;
+
+Fritter.prototype.defineContext = function () {
+    var self = this;
+    var nodes = this.nodes;
+    var context = this.context;
     
     function isBuiltin (fn) {
         return fn === context.setTimeout
@@ -15,17 +42,12 @@ module.exports = function (src, context) {
         ;
     }
     
-    var names = self.names = {};
-    var nodes = self.nodes = [];
-    var stack = self.stack = [];
-    
-    names.call = identifier(6);
-    context[names.call] = function (ix, fn) {
+    context[self.names.call] = function (ix, fn) {
         if (typeof fn === 'function' && typeof fn.apply === 'function') {
             var fn_ = function () {
-                stack.push(nodes[ix]);
+                self.stack.push(nodes[ix]);
                 var res = fn.apply(undefined, arguments);
-                stack.pop();
+                self.stack.pop();
                 return res;
             };
             return copyAttributes(fn, fn_);
@@ -40,14 +62,11 @@ module.exports = function (src, context) {
         else return fn;
     };
     
-    names.catcher = identifier(6);
-    names.catchVar = identifier(6);
-    
     (function () {
         var caught = [];
         var throwing = false;
         
-        context[names.catcher] = function (err) {
+        self.context[self.names.catcher] = function (err) {
             if (caught.indexOf(err) < 0) {
                 caught.push(err);
                 self.emit('error', err, {
@@ -65,8 +84,18 @@ module.exports = function (src, context) {
             throw err;
         };
     })();
+};
+
+Fritter.prototype.include = function (src, opts) {
+    if (typeof src === 'object') {
+        opts = src;
+        src = opts.source;
+    }
+    if (!opts) opts = {};
+    var nodes = this.nodes;
+    var names = this.names;
     
-    self.source = falafel(src, function (node) {
+    var src_ = falafel(src, function (node) {
         if (node.type === 'FunctionExpression'
         || node.type === 'FunctionDeclaration') {
             var inner =  node.body.source().slice(1,-1); // inside the brackets
@@ -83,11 +112,13 @@ module.exports = function (src, context) {
                     + nodes.length + ', ' + node.callee.source()
                 + '))'
             );
+            if (opts.filename) node.filename = opts.filename;
             nodes.push(node);
         }
     });
+    this.source += src_ + ';';
     
-    return self;
+    return this;
 };
 
 var Object_keys = Object.keys || function (obj) {

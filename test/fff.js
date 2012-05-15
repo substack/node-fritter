@@ -6,19 +6,25 @@ var fs = require('fs');
 var src = fs.readFileSync(__dirname + '/sources/fff.js', 'utf8');
 test('fff', function (t) {
     t.plan(2);
-    var fry = fritter(src);
+    var fry = fritter().include(src, { filename : 'fff.js' });
     fry.on('error', function (err, c) {
         t.equal(err, 'doom');
         
         t.deepEqual(
             c.stack.map(function (s) {
-                return s.callee.name
+                return s.callee.name + ':' + s.filename
             }),
-            [ 'f', 'f', 'f', 'f', 'f', 'f' ]
+            [
+                'f:fff.js', 'f:fff.js', 'f:fff.js',
+                'f:fff.js', 'f:fff.js', 'f:fff.js'
+            ]
         );
     });
     
     try {
         vm.runInNewContext(fry.source, fry.context);
-    } catch (err) {}
+    }
+    catch (err) {
+        if (err !== 'doom') t.fail(err);
+    }
 });

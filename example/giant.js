@@ -5,7 +5,7 @@ var src = '(' + function () {
     
     function fie (s) { smell(s) }
     function smell () { english('blood') }
-}+ ')()'
+} + ')()';
 
 var fritter = require('../');
 var fry = fritter(src);
