@@ -19,7 +19,8 @@ function Fritter (context) {
         call : identifier(6),
         catcher : identifier(6),
         catchVar : identifier(6),
-        expr : identifier(6)
+        expr : identifier(6),
+        stopped : identifier(6)
     };
     this.stack = [];
     this.current = undefined;
@@ -35,6 +36,7 @@ Fritter.prototype.defineContext = function () {
     var self = this;
     var nodes = this.nodes;
     var context = this.context;
+    var names = this.names;
     
     function isBuiltin (fn) {
         return fn === context.setTimeout
@@ -44,9 +46,10 @@ Fritter.prototype.defineContext = function () {
         ;
     }
     
-    context[self.names.call] = function (ix, fn) {
+    context[names.call] = function (ix, fn) {
         if (typeof fn === 'function' && typeof fn.apply === 'function') {
             var fn_ = function () {
+                if (self.stopped) throw names.stopped;
                 self.stack.unshift(nodes[ix]);
                 var res = fn.apply(undefined, arguments);
                 self.stack.shift();
@@ -68,7 +71,9 @@ Fritter.prototype.defineContext = function () {
         var caught = [];
         var throwing = false;
         
-        self.context[self.names.catcher] = function (err) {
+        self.context[names.catcher] = function (err) {
+            if (err === names.stopped) return;
+            
             if (caught.indexOf(err) < 0) {
                 caught.push(err);
                 self.emit('error', err, {
@@ -88,10 +93,15 @@ Fritter.prototype.defineContext = function () {
         };
     })();
     
-    context[self.names.expr] = function (ix, expr) {
+    context[names.expr] = function (ix, expr) {
+        if (self.stopped) throw names.stopped;
         self.current = self.nodes[ix];
         return expr;
     };
+};
+
+Fritter.prototype.stop = function () {
+    this.stopped = true;
 };
 
 Fritter.prototype.include = function (src, opts) {
