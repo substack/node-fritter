@@ -47,9 +47,9 @@ Fritter.prototype.defineContext = function () {
     context[self.names.call] = function (ix, fn) {
         if (typeof fn === 'function' && typeof fn.apply === 'function') {
             var fn_ = function () {
-                self.stack.push(nodes[ix]);
+                self.stack.unshift(nodes[ix]);
                 var res = fn.apply(undefined, arguments);
-                self.stack.pop();
+                self.stack.shift();
                 return res;
             };
             return copyAttributes(fn, fn_);
@@ -104,6 +104,13 @@ Fritter.prototype.include = function (src, opts) {
     var nodes = this.nodes;
     var names = this.names;
     
+    function pushNode (node) {
+        if (opts.filename) node.filename = opts.filename;
+        node.start = node.loc.start;
+        node.end = node.loc.end;
+        nodes.push(node);
+    }
+    
     var src_ = falafel({ source : src, loc : true }, function (node) {
         if (node.type === 'FunctionExpression'
         || node.type === 'FunctionDeclaration') {
@@ -121,19 +128,14 @@ Fritter.prototype.include = function (src, opts) {
                     + nodes.length + ', ' + node.callee.source()
                 + '))'
             );
-            if (opts.filename) node.filename = opts.filename;
-            node.start = node.loc.start;
-            node.end = node.loc.end;
-            nodes.push(node);
+            pushNode(node);
         }
         else if (node.type === 'ExpressionStatement') {
             node.update(
                 names.expr + '(' + nodes.length + ');'
                 + node.source()
             );
-            node.start = node.loc.start;
-            node.end = node.loc.end;
-            nodes.push(node);
+            pushNode(node);
         }
     });
     this.source += src_ + ';';
