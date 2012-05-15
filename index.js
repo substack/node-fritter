@@ -18,7 +18,8 @@ function Fritter (context) {
     this.names = {
         call : identifier(6),
         catcher : identifier(6),
-        catchVar : identifier(6)
+        catchVar : identifier(6),
+        expr : identifier(6)
     };
     this.stack = [];
     this.current = undefined;
@@ -86,6 +87,11 @@ Fritter.prototype.defineContext = function () {
             throw err;
         };
     })();
+    
+    context[self.names.expr] = function (ix, expr) {
+        self.current = self.nodes[ix];
+        return expr;
+    };
 };
 
 Fritter.prototype.include = function (src, opts) {
@@ -116,6 +122,15 @@ Fritter.prototype.include = function (src, opts) {
                 + '))'
             );
             if (opts.filename) node.filename = opts.filename;
+            node.start = node.loc.start;
+            node.end = node.loc.end;
+            nodes.push(node);
+        }
+        else if (node.type === 'ExpressionStatement') {
+            node.update(
+                names.expr + '(' + nodes.length + ');'
+                + node.source()
+            );
             node.start = node.loc.start;
             node.end = node.loc.end;
             nodes.push(node);
