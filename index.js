@@ -78,8 +78,8 @@ Fritter.prototype.defineContext = function () {
     };
     
     context[names.callProperty] = function (ix, obj, name) {
+        var fn = obj[name];
         return context[names.call](ix, function () {
-            var fn = obj[name];
             if (fn === undefined) {
                 throw new TypeError(
                     String(obj) + ' has no method \'' + name + '\''
@@ -91,7 +91,7 @@ Fritter.prototype.defineContext = function () {
                     + String(obj) + ' is not a function'
                 );
             }
-            return obj[name].apply(obj, arguments);
+            return fn.apply(obj, arguments);
         });
     };
     
@@ -220,8 +220,10 @@ Fritter.prototype.include = function (src, opts) {
         }
         else if (node.type === 'ExpressionStatement') {
             node.update(
-                names.expr + '(' + nodes.length + ');'
+                '{'
+                + names.expr + '(' + nodes.length + ');'
                 + node.source()
+                + '}'
             );
             pushNode(node);
         }

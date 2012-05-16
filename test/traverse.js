@@ -8,7 +8,7 @@ var src = fs.readFileSync(require.resolve('traverse'), 'utf8')
 ;
 
 test('fff', function (t) {
-    t.plan(4);
+    t.plan(3);
     
     var fry = fritter({
         t : { same : t.same.bind(t) },
@@ -19,18 +19,12 @@ test('fff', function (t) {
     
     fry.on('error', function (err, c) {
         t.equal(err, 'beep');
-        t.deepEqual(
-            c.stack.map(function (s) { return fry.nameOf(s) }),
-            []
-        );
     });
     
     try {
-//console.log(fry.source);
         vm.runInNewContext(fry.source, fry.context);
     }
     catch (err) {
-console.log(err.stack);
         t.equal(err, 'beep');
     }
 });
