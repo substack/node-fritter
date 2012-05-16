@@ -2,19 +2,21 @@ var falafel = require('falafel');
 var identifier = require('identifier');
 var EventEmitter = require('events').EventEmitter;
 
-module.exports = function (src, context) {
+exports = module.exports = function (src, context, opts) {
     if (typeof src === 'object') {
+        opts = context;
         context = src;
         src = undefined;
     }
     if (!context) context = {};
+    if (!opts) opts = {};
     
-    var fry = new Fritter(context || {});
+    var fry = new Fritter(context || {}, opts);
     if (src !== undefined) fry.include(String(src));
     return fry;
 };
 
-function Fritter (context) {
+function Fritter (context, opts) {
     this.names = {
         call : identifier(6),
         catcher : identifier(6),
@@ -28,6 +30,10 @@ function Fritter (context) {
     this.nodes = [];
     this.defineContext();
     this.source = '';
+    
+    this.files = [];
+    
+    this.options = opts;
 }
 
 Fritter.prototype = new EventEmitter;
@@ -46,11 +52,40 @@ Fritter.prototype.defineContext = function () {
         ;
     }
     
+    function wrapFunction (f, stack_) {
+        var f_ = function () {
+            self.stack.splice(0);
+            self.stack.push.apply(self.stack, stack_);
+            
+            if (typeof f.apply === 'function') {
+                return f.apply(this, arguments);
+            }
+            else {
+                return apply(f, this, arguments);
+            }
+        };
+        
+        return f_;
+    }
+    
+    self.stacks = {};
+    
     context[names.call] = function (ix, fn) {
         if (typeof fn === 'function' && typeof fn.apply === 'function') {
             var fn_ = function () {
                 if (self.stopped) throw names.stopped;
                 self.stack.unshift(nodes[ix]);
+                
+                if (self.options.longStacks) {
+                    var stack = self.stack.slice();
+                    
+                    for (var i = 0; i < arguments.length; i++) {
+                        if (typeof arguments[i] === 'function') {
+                            arguments[i] = wrapFunction(arguments[i], stack);
+                        }
+                    }
+                }
+                
                 var res = fn.apply(undefined, arguments);
                 self.stack.shift();
                 return res;
@@ -114,8 +149,11 @@ Fritter.prototype.include = function (src, opts) {
     var nodes = this.nodes;
     var names = this.names;
     
+    var fileId = this.files.length;
     function pushNode (node) {
         if (opts.filename) node.filename = opts.filename;
+        node.fileId = fileId;
+        
         node.start = node.loc.start;
         node.end = node.loc.end;
         nodes.push(node);
@@ -135,7 +173,7 @@ Fritter.prototype.include = function (src, opts) {
         else if (node.type === 'CallExpression') {
             node.callee.update(
                 '(' + names.call + '('
-                    + nodes.length + ', ' + node.callee.source()
+                    + nodes.length + ',' + node.callee.source()
                 + '))'
             );
             pushNode(node);
@@ -149,8 +187,19 @@ Fritter.prototype.include = function (src, opts) {
         }
     });
     this.source += src_ + ';';
+    this.files.push(src);
     
     return this;
+};
+
+Fritter.prototype.nameOf = function (node) {
+    if (!node) return;
+    var c = node.callee;
+    if (!c) return;
+    
+    if ('name' in c) return c.name;
+    if ('id' in c) return c.id.name;
+    return this.files[node.fileId].slice(c.range[0], c.range[1] + 1);
 };
 
 var Object_keys = Object.keys || function (obj) {
