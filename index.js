@@ -22,7 +22,9 @@ function Fritter (context, opts) {
         catcher : identifier(6),
         catchVar : identifier(6),
         expr : identifier(6),
-        stopped : identifier(6)
+        stopped : identifier(6),
+        callPush : identifier(6),
+        callPop : identifier(6)
     };
     this.stack = [];
     this.current = undefined;
@@ -70,36 +72,36 @@ Fritter.prototype.defineContext = function () {
     
     self.stacks = {};
     
+    context[names.callPush] = function (ix) {
+        self.stack.unshift(nodes[ix]);
+    };
+    
+    context[names.callPop] = function (ix) {
+        self.stack.shift();
+    };
+    
     context[names.call] = function (ix, fn) {
-        if (typeof fn === 'function' && typeof fn.apply === 'function') {
-            var fn_ = function () {
-                if (self.stopped) throw names.stopped;
-                self.stack.unshift(nodes[ix]);
+        if (typeof fn !== 'function') return fn;
+        
+        var fn_ = function () {
+            if (self.stopped) throw names.stopped;
+            self.stack.unshift(nodes[ix]);
+            
+            if (self.options.longStacks) {
+                var stack = self.stack.slice();
                 
-                if (self.options.longStacks) {
-                    var stack = self.stack.slice();
-                    
-                    for (var i = 0; i < arguments.length; i++) {
-                        if (typeof arguments[i] === 'function') {
-                            arguments[i] = wrapFunction(arguments[i], stack);
-                        }
+                for (var i = 0; i < arguments.length; i++) {
+                    if (typeof arguments[i] === 'function') {
+                        arguments[i] = wrapFunction(arguments[i], stack);
                     }
                 }
-                
-                var res = fn.apply(undefined, arguments);
-                self.stack.shift();
-                return res;
-            };
-            return copyAttributes(fn, fn_);
-        }
-        else if (typeof fn === 'object' && isBuiltin(fn)) {
-            // some builtin IE functions have no .apply()
-            var fn_ = function (_a, _b, _c, _d, _e, _f, _g, _h, _i, _j) {
-                return fn(_a, _b, _c, _d, _e, _f, _g, _h, _i, _j);
-            };
-            return copyAttributes(fn, fn_);
-        }
-        else return fn;
+            }
+            
+            var res = fn.apply(undefined, arguments);
+            self.stack.shift();
+            return res;
+        };
+        return copyAttributes(fn, fn_);
     };
     
     (function () {
@@ -112,7 +114,18 @@ Fritter.prototype.defineContext = function () {
             if (caught.indexOf(err) < 0) {
                 caught.push(err);
                 self.emit('error', err, {
-                    stack : self.stack.slice(),
+                    stack : self.stack.filter(function (s, ix) {
+                        var before = self.stack[ix - 1];
+                        if (!before) return true;
+                        if (!s) return true;
+                        
+                        var bn = self.nameOf(before);
+                        var sn = self.nameOf(s);
+                        if (bn && sn && bn === sn) {
+                            return false;
+                        }
+                        return true;
+                    }),
                     current : self.current
                 });
             }
@@ -164,11 +177,16 @@ Fritter.prototype.include = function (src, opts) {
         || node.type === 'FunctionDeclaration') {
             var inner =  node.body.source().slice(1,-1); // inside the brackets
             node.body.update('{'
+                + names.callPush + '(' + nodes.length + ');'
                 + 'try{' + inner + '}'
                 + 'catch(' + names.catchVar + '){'
                 + names.catcher + '(' + names.catchVar + ')'
                 + '}'
+                + 'finally {'
+                + names.callPop + '(' + nodes.length + ')'
+                + '}'
             + '}');
+            pushNode(node);
         }
         else if (node.type === 'CallExpression') {
             node.callee.update(
@@ -194,6 +212,7 @@ Fritter.prototype.include = function (src, opts) {
 
 Fritter.prototype.nameOf = function (node) {
     if (!node) return;
+    if (node.id && 'name' in node.id) return node.id.name;
     var c = node.callee;
     if (!c) return;
     

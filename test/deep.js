@@ -18,8 +18,8 @@ test('deeply nested delay', function (t) {
         t.deepEqual(
             c.stack.map(function (s) { return fry.nameOf(s) }),
             [
-                'qualia', null, 'nextTick', 'zzz',
-                'setTimeout', null, 'setTimeout',
+                'qualia', undefined, 'process.nextTick', 'zzz',
+                'setTimeout', undefined, 'setTimeout',
                 'yyy', 'xxx', 'setTimeout', 'h', 'g', 'f'
             ]
         );

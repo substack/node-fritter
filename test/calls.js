@@ -17,9 +17,7 @@ test('calls', function (t) {
         t.equal(c.stack.length, 3);
         
         t.deepEqual(
-            c.stack.map(function (s) {
-                return s.callee.name
-            }),
+            c.stack.map(function (s) { return fry.nameOf(s) }),
             [ 'h', 'g', 'f' ]
         );
         

@@ -12,7 +12,7 @@ test('fff', function (t) {
         
         t.deepEqual(
             c.stack.map(function (s) {
-                return s.callee.name + ':' + s.filename
+                return fry.nameOf(s) + ':' + s.filename
             }),
             [
                 'f:fff.js', 'f:fff.js', 'f:fff.js',
