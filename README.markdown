@@ -79,6 +79,12 @@ Include and wrap some javascript source `src`. Use `opts.filename` to associate
 nodes in the stack with filenames so custom error handlers know what file an
 exception originated form.
 
+fry.run()
+---------
+
+Run the `fry.source` under `fry.context` using `Function()` as a nicer form of
+`eval()`.
+
 fry.stop()
 ----------
 
