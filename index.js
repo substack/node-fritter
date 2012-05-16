@@ -119,8 +119,12 @@ Fritter.prototype.defineContext = function () {
                         if (!before) return true;
                         if (!s) return true;
                         
-                        var bn = self.nameOf(before);
-                        var sn = self.nameOf(s);
+                        var bn = before.callee && (
+                            before.callee.name
+                            || (before.callee.id && before.callee.id.name)
+                        );
+                        var sn = s.id && s.id.name;
+                        
                         if (before.type === 'CallExpression' 
                         && bn && sn && bn === sn) {
                             return false;
