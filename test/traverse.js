@@ -7,7 +7,7 @@ var src = fs.readFileSync(require.resolve('traverse'), 'utf8')
     + ';' + fs.readFileSync(__dirname + '/sources/traverse.js', 'utf8')
 ;
 
-test('fff', function (t) {
+test('traverse', function (t) {
     t.plan(3);
     
     var fry = fritter({

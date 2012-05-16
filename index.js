@@ -39,6 +39,19 @@ function Fritter (context, opts) {
 
 Fritter.prototype = new EventEmitter;
 
+Fritter.prototype.run = function () {
+    var args = [], vars = [];
+    for (var key in this.context) {
+        vars.push(key);
+        args.push(this.context[key]);
+    }
+    
+    var fn = Function(vars, this.source);
+    try {
+        fn.apply(null, args);
+    } catch (err) {}
+};
+
 Fritter.prototype.defineContext = function () {
     var self = this;
     var nodes = this.nodes;
