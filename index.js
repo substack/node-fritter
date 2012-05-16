@@ -29,6 +29,7 @@ function Fritter (context, opts) {
     this.context = context;
     this.nodes = [];
     this.source = '';
+    this.sources = [];
     this.files = [];
     this.options = opts;
     
@@ -194,7 +195,9 @@ Fritter.prototype.include = function (src, opts) {
             pushNode(node);
         }
     });
+    
     this.source += src_ + ';';
+    this.sources.push(src_);
     this.files.push(src);
     
     return this;
@@ -207,8 +210,10 @@ Fritter.prototype.nameOf = function (node) {
     if (!c) return;
     
     if ('name' in c) return c.name;
-    if ('id' in c) return c.id.name;
-    return this.files[node.fileId].slice(c.range[0], c.range[1] + 1);
+    if (c.id && 'id' in c) return c.id.name;
+    if (c.type === 'MemberExpression' && !c.computed) {
+        return this.files[node.fileId].slice(c.range[0], c.range[1] + 1);
+    }
 };
 
 var Object_keys = Object.keys || function (obj) {
@@ -226,8 +231,8 @@ function copyAttributes (fn, fn_) {
 function filterStack (stack) {
     return stack.filter(function (s, ix) {
         var before = stack[ix + 1];
-        if (!before) return true;
         if (!s) return true;
+        if (!before) return true;
         
         var bn = before.callee && (
             before.callee.name
@@ -236,7 +241,8 @@ function filterStack (stack) {
         var sn = s.id && s.id.name;
         
         if (before.type === 'CallExpression' 
-        && bn && sn && bn === sn) {
+        && ((bn && sn) || s.parent === before)
+        && bn === sn) {
             return false;
         }
         return true;
