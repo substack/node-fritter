@@ -113,24 +113,13 @@ Fritter.prototype.defineContext = function () {
             
             if (caught.indexOf(err) < 0) {
                 caught.push(err);
+                
+                var stack_ = self.options.longStacks
+                    ? filterStack(self.stack)
+                    : self.stack
+                ;
                 self.emit('error', err, {
-                    stack : self.stack.filter(function (s, ix) {
-                        var before = self.stack[ix + 1];
-                        if (!before) return true;
-                        if (!s) return true;
-                        
-                        var bn = before.callee && (
-                            before.callee.name
-                            || (before.callee.id && before.callee.id.name)
-                        );
-                        var sn = s.id && s.id.name;
-                        
-                        if (before.type === 'CallExpression' 
-                        && bn && sn && bn === sn) {
-                            return false;
-                        }
-                        return true;
-                    }),
+                    stack : stack_,
                     current : self.current
                 });
             }
@@ -236,4 +225,24 @@ function copyAttributes (fn, fn_) {
     var keys = Object_keys(fn);
     for (var i = 0; i < keys.length; i++) fn_[key] = fn[key];
     return fn_;
+}
+
+function filterStack (stack) {
+    return stack.filter(function (s, ix) {
+        var before = stack[ix + 1];
+        if (!before) return true;
+        if (!s) return true;
+        
+        var bn = before.callee && (
+            before.callee.name
+            || (before.callee.id && before.callee.id.name)
+        );
+        var sn = s.id && s.id.name;
+        
+        if (before.type === 'CallExpression' 
+        && bn && sn && bn === sn) {
+            return false;
+        }
+        return true;
+    });
 }
