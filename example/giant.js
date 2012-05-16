@@ -6,7 +6,10 @@ var fry = fritter(src);
 fry.on('error', function (err, c) {
     console.log(String(err));
     c.stack.forEach(function (s) {
-        console.log('    in ' + fry.nameOf(s) + ', line ' + s.start.line);
+        console.log(
+            '    in .' + fry.nameOf(s) + '()'
+            + ', line ' + s.start.line
+        );
     });
 });
 fry.run();

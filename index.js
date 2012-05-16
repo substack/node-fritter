@@ -258,7 +258,14 @@ Fritter.prototype.nameOf = function (node) {
     if ('name' in c) return c.name;
     if (c.id && 'id' in c) return c.id.name;
     if (c.type === 'MemberExpression' && !c.computed) {
-        return this.files[node.fileId].slice(c.range[0], c.range[1] + 1);
+        var r = c.range;
+        
+        if (c.object && c.object.type === 'Identifier') {
+            r = [ c.object.range[0], c.property.range[1] ];
+        }
+        else if (c.property) r = c.property.range;
+        
+        return this.files[node.fileId].slice(r[0], r[1] + 1);
     }
 };
 
