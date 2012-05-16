@@ -50,14 +50,17 @@ methods
 var fritter = require('fritter')
 ```
 
-var fry = fritter(src, context={})
---------------------------------
+var fry = fritter(src, context={}, opts={})
+-------------------------------------------
 
 Return a `fry` object given some optional javascript source `src` and some
 `context` to execute in and populate.
 
 `fry` emits `'error'` events with the error object and the present callstack as
 arguments when exceptions in `src` are thrown.
+
+If `opts.longStacks` is true, turn on longer stack traces for a performance
+penalty.
 
 fry.include(src, opts={})
 -------------------------
