@@ -22,7 +22,8 @@ function Fritter (context, opts) {
         expr : identifier(6),
         stopped : identifier(6),
         callPush : identifier(6),
-        callPop : identifier(6)
+        callPop : identifier(6),
+        callProperty : identifier(6)
     };
     this.stack = [];
     this.current = undefined;
@@ -64,7 +65,6 @@ Fritter.prototype.defineContext = function () {
                 return apply(f, this, arguments);
             }
         };
-        
         return f_;
     }
     
@@ -75,6 +75,24 @@ Fritter.prototype.defineContext = function () {
     
     context[names.callPop] = function (ix) {
         if (longStacks) self.stack.shift();
+    };
+    
+    context[names.callProperty] = function (ix, obj, name) {
+        return context[names.call](ix, function () {
+            var fn = obj[name];
+            if (fn === undefined) {
+                throw new TypeError(
+                    String(obj) + ' has no method \'' + name + '\''
+                );
+            }
+            else if (typeof fn !== 'function') {
+                throw new TypeError(
+                    'Property \'' + name + '\' of '
+                    + String(obj) + ' is not a function'
+                );
+            }
+            return obj[name].apply(obj, arguments);
+        });
     };
     
     context[names.call] = function (ix, fn) {
@@ -94,7 +112,7 @@ Fritter.prototype.defineContext = function () {
                 }
             }
             
-            var res = fn.apply(undefined, arguments);
+            var res = fn.apply(this, arguments);
             self.stack.shift();
             return res;
         };
@@ -177,6 +195,19 @@ Fritter.prototype.include = function (src, opts) {
                 + names.callPop + '(' + nodes.length + ')'
                 + '}'
             + '}');
+            pushNode(node);
+        }
+        else if (node.type === 'CallExpression'
+        && node.callee.type === 'MemberExpression') {
+            node.callee.update(
+                '(' + names.callProperty + '('
+                    + nodes.length
+                    + ','
+                    + node.callee.object.source()
+                    + ','
+                    + JSON.stringify(node.callee.property.name)
+                + '))'
+            );
             pushNode(node);
         }
         else if (node.type === 'CallExpression') {

@@ -9,9 +9,11 @@ var src = fs.readFileSync(require.resolve('traverse'), 'utf8')
 
 test('fff', function (t) {
     t.plan(4);
+    
     var fry = fritter({
-        t : t,
+        t : { same : t.same.bind(t) },
         module : { exports : {} },
+        console : console
     });
     fry.include(src);
     
@@ -24,6 +26,7 @@ test('fff', function (t) {
     });
     
     try {
+//console.log(fry.source);
         vm.runInNewContext(fry.source, fry.context);
     }
     catch (err) {
