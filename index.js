@@ -8,10 +8,8 @@ exports = module.exports = function (src, context, opts) {
         context = src;
         src = undefined;
     }
-    if (!context) context = {};
-    if (!opts) opts = {};
     
-    var fry = new Fritter(context || {}, opts);
+    var fry = new Fritter(context || {}, opts || {});
     if (src !== undefined) fry.include(String(src));
     return fry;
 };
@@ -30,12 +28,11 @@ function Fritter (context, opts) {
     this.current = undefined;
     this.context = context;
     this.nodes = [];
-    this.defineContext();
     this.source = '';
-    
     this.files = [];
-    
     this.options = opts;
+    
+    this.defineContext();
 }
 
 Fritter.prototype = new EventEmitter;
@@ -70,14 +67,13 @@ Fritter.prototype.defineContext = function () {
         return f_;
     }
     
-    self.stacks = {};
-    
+    var longStacks = self.options.longStacks;
     context[names.callPush] = function (ix) {
-        self.stack.unshift(nodes[ix]);
+        if (longStacks) self.stack.unshift(nodes[ix]);
     };
     
     context[names.callPop] = function (ix) {
-        self.stack.shift();
+        if (longStacks) self.stack.shift();
     };
     
     context[names.call] = function (ix, fn) {
