@@ -115,13 +115,14 @@ Fritter.prototype.defineContext = function () {
                 caught.push(err);
                 self.emit('error', err, {
                     stack : self.stack.filter(function (s, ix) {
-                        var before = self.stack[ix - 1];
+                        var before = self.stack[ix + 1];
                         if (!before) return true;
                         if (!s) return true;
                         
                         var bn = self.nameOf(before);
                         var sn = self.nameOf(s);
-                        if (bn && sn && bn === sn) {
+                        if (before.type === 'CallExpression' 
+                        && bn && sn && bn === sn) {
                             return false;
                         }
                         return true;
