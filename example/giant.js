@@ -7,7 +7,7 @@ fry.on('error', function (err, c) {
     console.log(String(err));
     c.stack.forEach(function (s) {
         console.log(
-            '    in .' + fry.nameOf(s) + '()'
+            '  in .' + fry.nameOf(s) + '()'
             + ', line ' + s.start.line
         );
     });
